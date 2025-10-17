@@ -1,63 +1,64 @@
 import random
 
-
 def modified_gale_shapley(student_prefs, n):
-    # Initialize all student and women as free
-    free_student = list(range(n))
-    topic = [None] * n  # (None means not chosen by any student)
+    # Initialize all students and topics as free
+    free_students = list(range(n))
+    topic = [None] * n  # Topics' assigned students (None means unassigned)
     interest = {s: 0 for s in range(n)}  # Track each student's interest index
 
-    while free_student:
-        s = free_student[0]  # Pick the first free man
-        t = student_prefs[s][interest[s]]  # Get the topic he prefers next
+    while free_students:
+        s = free_students[0]  # Pick the first free student
+        # Check if student has exhausted their preference list
+        if interest[s] >= n:
+            free_students.remove(s)  # No more topics to propose to
+            continue
 
-        # Increment man's proposal index
-        interest[s] += 1
+        t = student_prefs[s][interest[s]]  # Get the topic the student prefers next
+        interest[s] += 1  # Increment student's interest index
 
-        # If woman is free, engage them
+        # If topic is free, assign the student
         if topic[t] is None:
             topic[t] = s
-            free_student.remove(s)
+            free_students.remove(s)
         else:
-            # If woman is already engaged, collect all student proposing to her (including current man)
-            competing_student = [topic[t], s]
-            # Check if other free student are also proposing to this woman at their current preference
-            for other_s in free_student:
-                if other_s != s and student_prefs[other_s][interest[other_s]] == t:
-                    competing_student.append(other_s)
+            # Collect all students proposing to this topic (including current student and assigned student)
+            competing_students = [topic[t], s]
+            # Check other free students proposing to this topic
+            for other_s in free_students:
+                if other_s != s and interest[other_s] < n and student_prefs[other_s][interest[other_s]] == t:
+                    competing_students.append(other_s)
 
-            # Randomly choose one of the competing men
-            chosen_man = random.choice(competing_men)
-            
-            # Update partnerships
-            partner[w] = chosen_man
-            
-            # Handle all competing men
-            for man in competing_men:
-                if man == chosen_man:
-                    # Chosen man is engaged, remove from free_men if present
-                    if man in free_men:
-                        free_men.remove(man)
+            # Randomly choose one of the competing students
+            chosen_student = random.choice(competing_students)
+
+            # Update assignments
+            topic[t] = chosen_student
+
+            # Handle all competing students
+            for student in competing_students:
+                if student == chosen_student:
+                    # Chosen student is assigned, remove from free_students if present
+                    if student in free_students:
+                        free_students.remove(student)
                 else:
-                    # Non-chosen men become or remain free
-                    if man not in free_men:
-                        free_men.append(man)
-                    # Increment proposal index for non-chosen men who were proposing now
-                    if man != partner[w] or man == m:
-                        if proposals[man] < n:  # Only increment if they have more women to propose to
-                            proposals[man] += 1
-    
-    # Convert partner list to matches dictionary
-    matches = {f"W{w}": f"M{partner[w]}" for w in range(n)}
+                    # Non-chosen students become or remain free
+                    if student not in free_students:
+                        free_students.append(student)
+                    # Increment interest index for non-chosen students who were proposing now
+                    if student == s or (student in free_students and student_prefs[student][interest[student]] == t):
+                        if interest[student] < n:  # Only increment if they have more topics to propose to
+                            interest[student] += 1
+
+    # Convert topic list to matches dictionary
+    matches = {f"T{t}": f"S{topic[t]}" for t in range(n)}
     return matches
 
-
 # Example usage
-n = 3  # Number of men/women
+n = 3  # Number of students/topics
 student_prefs = [
-    [0, 1, 2],  # M0's preferences: W0, W1, W2
-    [1, 0, 2],  # M1's preferences: W1, W0, W2
-    [0, 1, 2]  # M2's preferences: W0, W1, W2
+    [0, 1, 2],  # S0's preferences: T0, T1, T2
+    [1, 0, 2],  # S1's preferences: T1, T0, T2
+    [0, 1, 2]   # S2's preferences: T0, T1, T2
 ]
 
 random.seed(42)  # For reproducibility
