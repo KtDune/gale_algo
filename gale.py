@@ -8,44 +8,46 @@ def modified_gale_shapley(men_prefs, women_prefs, n):
     
     while free_men:
         m = free_men[0]  # Pick the first free man
-        w = men_prefs[m][proposals[m]]  # Get the woman he prefers next
+        # Check if man has exhausted his preference list
+        if proposals[m] >= n:
+            free_men.remove(m)  # No more women to propose to
+            continue
         
-        # Increment man's proposal index
-        proposals[m] += 1
+        w = men_prefs[m][proposals[m]]  # Get the woman he prefers next
+        proposals[m] += 1  # Increment man's proposal index
         
         # If woman is free, engage them
         if partner[w] is None:
             partner[w] = m
             free_men.remove(m)
         else:
-            # If woman is already engaged, collect all men proposing to her (including current man)
+            # Collect all men proposing to this woman (including current man and her partner)
             competing_men = [partner[w], m]
-            # Check if other free men are also proposing to this woman at their current preference
+            # Check other free men proposing to this woman
             for other_m in free_men:
-                if other_m != m and men_prefs[other_m][proposals[other_m]] == w:
+                if other_m != m and proposals[other_m] < n and men_prefs[other_m][proposals[other_m]] == w:
                     competing_men.append(other_m)
             
             # Randomly choose one of the competing men
             chosen_man = random.choice(competing_men)
             
-            # Free all other men who were competing
-            for man in competing_men:
-                if man != chosen_man:
-                    if man == partner[w]:
-                        free_men.append(man)  # Free the previously engaged man
-                    # If man was in free_men, he's already there, no need to add
-                    elif man != m:
-                        free_men.append(man)  # Free other competing men
-                        proposals[man] += 1  # Increment their proposal index
-            
-            # Assign the chosen man
+            # Update partnerships
             partner[w] = chosen_man
-            free_men.remove(chosen_man)
             
-            # If the chosen man was not the current man m, ensure m remains free
-            if chosen_man != m:
-                if m not in free_men:
-                    free_men.append(m)
+            # Handle all competing men
+            for man in competing_men:
+                if man == chosen_man:
+                    # Chosen man is engaged, remove from free_men if present
+                    if man in free_men:
+                        free_men.remove(man)
+                else:
+                    # Non-chosen men become or remain free
+                    if man not in free_men:
+                        free_men.append(man)
+                    # Increment proposal index for non-chosen men who were proposing now
+                    if man != partner[w] or man == m:
+                        if proposals[man] < n:  # Only increment if they have more women to propose to
+                            proposals[man] += 1
     
     # Convert partner list to matches dictionary
     matches = {f"W{w}": f"M{partner[w]}" for w in range(n)}
